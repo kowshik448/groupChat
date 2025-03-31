@@ -97,7 +97,12 @@ const ChatRoom: React.FC = () => {
           </Typography>
         </Box>
       ) : (
-        <ChatBox />
+        <Box>
+            <Button variant="outlined" onClick={() => navigate('/')} sx={{ mb: 2 }}>
+            Back to Home
+            </Button>
+            <ChatBox />
+        </Box>
       )}
     </Box>
   );

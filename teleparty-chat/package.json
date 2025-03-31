@@ -2,7 +2,7 @@
   "name": "teleparty-chat",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://kowshik448.github.io/teleparty-chat",
+  "homepage": "https://kowshik448.github.io/groupChat",
   "dependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",

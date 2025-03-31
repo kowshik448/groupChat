@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { ChatProvider } from './context/ChatContext';
 import Home from './pages/Home';
@@ -24,7 +24,7 @@ const App: React.FC = () => {
       <ChatProvider>
         <Router>
           <Routes>
-          <Route path="/teleparty-chat" element={<Home />} />
+          <Route path="/groupChat" element={<Home />} />
             <Route path="/" element={<Home />} />
             <Route path="/create" element={<CreateRoom />} />
             <Route path="/join" element={<JoinRoom />} />

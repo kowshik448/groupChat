@@ -86,6 +86,7 @@ const ChatBox: React.FC = () => {
   };
 
   const messageGroups = groupMessagesByDate();
+  const isSomeoneElseTyping = isTyping.anyoneTyping && !isTyping.isUserTyping;
 
   return (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
@@ -216,9 +217,7 @@ const ChatBox: React.FC = () => {
         ))}
 
         <div ref={messagesEndRef} />
-
-        {/* Typing indicator */}
-        {isTyping.anyoneTyping && (
+        {isSomeoneElseTyping && (
           <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
             <CircularProgress size={16} sx={{ mr: 1 }} />
             <Typography variant="body2" color="text.secondary">

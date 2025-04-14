@@ -25,7 +25,11 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [connected, setConnected] = useState<boolean>(false);
-  const [isTyping, setIsTyping] = useState<UserTyping>({ anyoneTyping: false, usersTyping: [] });
+  const [isTyping, setIsTyping] = useState<UserTyping>({ 
+    anyoneTyping: false, 
+    usersTyping: [],
+    isUserTyping: false // Add this property to track if current user is typing
+  });
   const [isClientInitialized, setIsClientInitialized] = useState<boolean>(false);
 
   // Enhanced system message formatting
@@ -71,27 +75,28 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       },
       onMessage: (message) => {
         try {
-          
           if (message.type === SocketMessageTypes.SEND_MESSAGE) {
-            // Check if it's a message list (history) or a single message
             if (Array.isArray(message.data.messages)) {
-              // It's a message list/history
               const messageList = message.data as MessageList;
               const formattedMessages = messageList.messages.map(msg => {
-                if (msg.isSystemMessage) {
+                const formattedMsg = {
+                  ...msg,
+                };
+                
+                if (formattedMsg.isSystemMessage) {
                   return {
-                    ...msg,
-                    body: formatSystemMessage(msg.body)
+                    ...formattedMsg,
+                    body: formatSystemMessage(formattedMsg.body)
                   };
                 }
-                return msg;
+                return formattedMsg;
               });
               
               setMessages(formattedMessages);
             } else {
               // It's a single message
               const chatMessage = message.data as SessionChatMessage;
-
+      
               if (chatMessage.isSystemMessage) {
                 chatMessage.body = formatSystemMessage(chatMessage.body);
               }
@@ -100,12 +105,18 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
           } else if (message.type === SocketMessageTypes.SET_TYPING_PRESENCE) {
             const typingData = message.data as UserTyping;
-            setIsTyping(typingData);
+            
+            // Preserve the isUserTyping state when receiving typing updates from others
+            setIsTyping(prev => ({
+              ...typingData,
+              isUserTyping: prev.isUserTyping
+            }));
           }
         } catch (error) {
           console.error("Error processing message:", error);
         }
       }
+      
     };
 
     // Create a new client only once
@@ -129,7 +140,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const roomId = await clientRef.current.createChatRoom(nickname, userIcon);
       setRoomId(roomId);
-      setUser({ nickname, userIcon });
+      setUser({ nickname, userIcon: userIcon });
       return roomId;
     } catch (error) {
       console.error("Error creating room:", error);
@@ -147,14 +158,30 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     
     try {
-      await clientRef.current.joinChatRoom(nickname, roomId, userIcon);
+      const messageList = await clientRef.current.joinChatRoom(nickname, roomId, userIcon);
       setRoomId(roomId);
       setUser({ nickname, userIcon });
+      
+      // Process and set the message history
+      if (messageList && messageList.messages) {
+        const formattedMessages = messageList.messages.map(msg => {
+          if (msg.isSystemMessage) {
+            return {
+              ...msg,
+              body: formatSystemMessage(msg.body)
+            };
+          }
+          return msg;
+        });
+        
+        setMessages(formattedMessages);
+      }
     } catch (error) {
       console.error("Error joining room:", error);
       throw error;
     }
   };
+  
 
   const sendMessage = (messageBody: string) => {
     if (!clientRef.current || !connected || !roomId) {
@@ -177,6 +204,13 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     
     try {
+      // Update local state to track if the current user is typing
+      setIsTyping(prev => ({
+        ...prev,
+        isUserTyping: typing
+      }));
+      
+      // Send typing status to server
       clientRef.current.sendMessage(SocketMessageTypes.SET_TYPING_PRESENCE, {
         typing
       });

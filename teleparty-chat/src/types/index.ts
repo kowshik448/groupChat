@@ -15,4 +15,5 @@ export interface ChatMessage {
 export interface UserTyping {
   anyoneTyping: boolean;
   usersTyping: string[];
+  isUserTyping: boolean;
 }
